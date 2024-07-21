@@ -1,0 +1,9 @@
+[user]
+email = potgmu@gmail.com
+name = darculus
+ 
+[github]
+user = "darculus"
+ 
+[core]
+sshCommand = "ssh -i ~/.ssh/potgmu"
