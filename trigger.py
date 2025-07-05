@@ -1,15 +1,15 @@
 from Windows import *
 from Config import *
-import Mouse, win32api
+from HIDMouse import HIDMouse
 
 def trigger(img, weapon, RButton_timer):
     (b, g, r) = img[Region.center_y, Region.center_x] 
     # print(r)
-    if r >= 253 and r <= 255:
+    if r >= 253:
         if weapon == 1 and RButton_timer >= 27:
-                Mouse.Click(Mouse.Button.Right)
+                HIDMouse.Click(HIDMouse.Button.Right)
                 RButton_timer = 0
         elif weapon == 4:
-            Mouse.Up()
+            HIDMouse.Up()
         else:
-            Mouse.Click()
+            HIDMouse.Click()

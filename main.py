@@ -10,7 +10,7 @@ from TTS import TTS
 from Windows import *
 from Config import *
 import time
-import Mouse
+from HIDMouse import HIDMouse
 from trigger import trigger
 
 if not is_admin():
@@ -59,6 +59,8 @@ outline_range = (0, 0, 150)
 
 kernel = np.ones((2, 2), np.uint8)
 RButton_timer = 0
+HIDMouse.Init()
+
 while True:
     if not isCapslock() or is_cursor_show():
         time.sleep(0.01)
@@ -105,11 +107,6 @@ while True:
     cX = x + w // 2
     cY = y + h // 2
     cY = cY * GlobalConfig.offsetY
-    cv2.circle(img, (int(cX), int(cY)), 5, (0, 0, 255), -1)
-    # cv2.imwrite("OUTPUT.jpg", img)
-    # cv2.imshow("img", img)
-    # cv2.waitKey(1)
-    # continue
     cX = cX - Region.center_x
     cY = cY - Region.center_y
 
@@ -134,7 +131,7 @@ while True:
 
     if dY > -10:
         # if LButton or RButton or isFlickKey:
-        Mouse.Move(dX, dY)
+        HIDMouse.Move(dX, dY)
     # if isFlickKey:
     #     if abs(cX) <= Config.flickRangeX and cY <= Config.flickRangeY and cY >= -5:            
     #         button = Mouse.Button.Left if Config.isTriggerL else Mouse.Button.Right        

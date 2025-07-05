@@ -1,6 +1,6 @@
-from enum import Enum
 import hid, random
 from time import sleep
+from threading import Thread
 
 class Button:
     Left = 1
@@ -9,12 +9,7 @@ class Button:
     Button4 = 8
     Button5 = 16
 
-MOUSE_LEFT = 1
-MOUSE_RIGHT = 2
-MOUSE_MIDDLE = 4
-MOUSE_ALL = MOUSE_LEFT | MOUSE_RIGHT | MOUSE_MIDDLE
-
-class SerialMouse:
+class HIDMouse:
     _buttons_mask = 0
     _dev = None
 
@@ -22,10 +17,10 @@ class SerialMouse:
     def _init(cls, dev):
         cls._dev = dev
         cls._buttons_mask = 0
-        cls.Move(0, 0)
+        cls.Move(5, 5)
 
     @classmethod
-    def Init(cls, vid=0, pid=0, ping_code=0x7C):
+    def Init(cls, vid=0x046D, pid=0xC547, ping_code=0x7C):
         dev = find_mouse_device(vid, pid, ping_code)
         if not dev:
             vid_str = hex(vid) if vid else "Unspecified"
@@ -44,40 +39,48 @@ class SerialMouse:
             cls.Move(0, 0)
 
     @classmethod
-    def Click(cls, button=Button.Left, delay=0.25):
-        cls._buttons_mask = button
-        cls.Move(0, 0)
+    def Click_async(cls, button=Button.Left, delay=0.25):
+        # cls._buttons_mask = button
+        # cls.Move(0, 0)
+        cls.Down(button)
         if delay >= 0.05:
             delay = random.uniform(delay - 0.05, delay + 0.05)
         sleep(delay)
-        cls._buttons_mask = 0
-        cls.Move(0, 0)
+        cls.Up(button)
+        # cls._buttons_mask = 0
+        # cls.Move(0, 0)
+    @staticmethod
+    def Click(button=Button.Left, delay=0.25):
+        Thread(target=HIDMouse.Click_async, args=(button, delay)).start()
 
     @classmethod
     def Down(cls, button=Button.Left):
         cls._buttons(cls._buttons_mask | button)
+        cls.Move(0, 0)
 
     @classmethod
     def Up(cls, button=Button.Left):
         cls._buttons(cls._buttons_mask & ~button)
+        cls.Move(0, 0)
 
     @classmethod
     def is_pressed(cls, button=Button.Left):
         return bool(button & cls._buttons_mask)
 
     @classmethod
-    def Move(cls, x, y):
+    def Move(cls, x, y, z=0):
         limited_x = limit_xy(x)
         limited_y = limit_xy(y)
-        cls._sendRawReport(cls._makeReport(limited_x, limited_y))
+        cls._sendRawReport(cls._makeReport(limited_x, limited_y, z))
 
     @classmethod
-    def _makeReport(cls, x, y):
+    def _makeReport(cls, x, y, z):
         report_data = [
             0x01,   # Report ID: 0
             cls._buttons_mask,
             low_byte(x), high_byte(x),
-            low_byte(y), high_byte(y)
+            low_byte(y), high_byte(y),
+            z
         ]
         return report_data
 
@@ -118,7 +121,7 @@ def limit_xy(xy):
     elif xy > 32767:
         return 32767
     else:
-        return xy
+        return int(xy)
 
 
 def low_byte(x):
@@ -127,3 +130,8 @@ def low_byte(x):
 
 def high_byte(x):
     return (x >> 8) & 0xFF
+
+
+if __name__ == "__main__":
+    HIDMouse.Init()
+    HIDMouse.Move(100, 100)
